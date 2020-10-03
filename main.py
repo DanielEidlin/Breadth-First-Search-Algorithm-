@@ -1,6 +1,7 @@
 import os
 import copy
 import queue
+<<<<<<< Updated upstream
 import time
 
 
@@ -41,6 +42,66 @@ def valid(maze, path):
     # Check that we are not making a reverse step
     if len(path) > 1:
         if path[-1] == "R" and path[-2] == "L":
+=======
+from game2dboard import Board
+
+
+class Algorithm(object):
+
+    def __init__(self):
+        self.path = queue.Queue()
+        self.path.put("")
+        self.current_path = ""
+        self.maze = self.create_maze()
+        self.directions = ["R", "L", "U", "D"]
+
+    @staticmethod
+    def create_maze():
+        maze = [["#", "#", "s", "#", "#"],
+                [" ", " ", " ", "#", "#"],
+                [" ", "#", " ", " ", "#"],
+                [" ", "#", "#", " ", "#"],
+                [" ", " ", " ", "f", "#"]]
+        return maze
+
+    @staticmethod
+    def clear_screen():
+        os.system('cls' if os.name == 'nt' else 'clear')
+
+    def valid(self, path):
+        # Check that we are not making a reverse step
+        if len(path) > 1:
+            if path[-1] == "R" and path[-2] == "L":
+                return False
+            elif path[-1] == "L" and path[-2] == "R":
+                return False
+            elif path[-1] == "U" and path[-2] == "D":
+                return False
+            elif path[-1] == "D" and path[-2] == "U":
+                return False
+
+        for x in range(len(self.maze[0])):
+            if self.maze[0][x] == "s":
+                start_x = x
+                break
+
+        current_x = start_x
+        current_y = 0
+
+        for i, direction in enumerate(path):
+            if direction == "R":
+                current_x += 1
+            elif direction == "L":
+                current_x -= 1
+            elif direction == "U":
+                current_y -= 1
+            elif direction == "D":
+                current_y += 1
+            else:
+                raise ValueError(f"Direction: {direction} maze[{i}] is not a valid direction!")
+
+        if not (-1 < current_x < len(self.maze[0]) and -1 < current_y < len(self.maze)):
+>>>>>>> Stashed changes
             return False
         elif path[-1] == "L" and path[-2] == "R":
             return False
