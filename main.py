@@ -2,133 +2,157 @@ import os
 import copy
 import queue
 import time
+from game2dboard import Board
 
 
-def create_maze():
-    maze = [["#", "#", "s", "#", "#"],
-            [" ", " ", " ", "#", "#"],
-            [" ", "#", " ", " ", "#"],
-            [" ", "#", "#", " ", "#"],
-            [" ", " ", " ", "f", "#"]]
-    return maze
+class Algorithm(object):
 
+    def __init__(self):
+        self.path = queue.Queue()
+        self.path.put("")
+        self.current_path = ""
+        self.maze = self.create_maze()
+        self.directions = ["R", "L", "U", "D"]
 
-def maze_ended(maze, path):
-    for x in range(len(maze[0])):
-        if maze[0][x] == "s":
-            start_x = x
-            break
+    @staticmethod
+    def create_maze():
+        maze = [["#", "#", "s", "#", "#"],
+                [" ", " ", " ", "#", "#"],
+                [" ", "#", " ", " ", "#"],
+                [" ", "#", "#", " ", "#"],
+                [" ", " ", " ", "f", "#"]]
+        return maze
 
-    current_x = start_x
-    current_y = 0
+    @staticmethod
+    def clear_screen():
+        os.system('cls' if os.name == 'nt' else 'clear')
 
-    for i, direction in enumerate(path):
-        if direction == "R":
-            current_x += 1
-        elif direction == "L":
-            current_x -= 1
-        elif direction == "U":
-            current_y -= 1
-        elif direction == "D":
-            current_y += 1
+    def valid(self, path):
+        # Check that we are not making a reverse step
+        if len(path) > 1:
+            if path[-1] == "R" and path[-2] == "L":
+                return False
+            elif path[-1] == "L" and path[-2] == "R":
+                return False
+            elif path[-1] == "U" and path[-2] == "D":
+                return False
+            elif path[-1] == "D" and path[-2] == "U":
+                return False
+
+        for x in range(len(self.maze[0])):
+            if self.maze[0][x] == "s":
+                start_x = x
+                break
+
+        current_x = start_x
+        current_y = 0
+
+        for i, direction in enumerate(path):
+            if direction == "R":
+                current_x += 1
+            elif direction == "L":
+                current_x -= 1
+            elif direction == "U":
+                current_y -= 1
+            elif direction == "D":
+                current_y += 1
+            else:
+                raise ValueError(f"Direction: {direction} maze[{i}] is not a valid direction!")
+
+        if not (-1 < current_x < len(self.maze[0]) and -1 < current_y < len(self.maze)):
+            return False
+        elif self.maze[current_y][current_x] == "#":
+            return False
         else:
-            raise ValueError(f"Direction: {direction} maze[{i}] is not a valid direction!")
+            return True
 
-    return maze[current_y][current_x] == "f"
+    def maze_ended(self):
+        for x in range(len(self.maze[0])):
+            if self.maze[0][x] == "s":
+                start_x = x
+                break
 
+        current_x = start_x
+        current_y = 0
 
-def valid(maze, path):
-    # Check that we are not making a reverse step
-    if len(path) > 1:
-        if path[-1] == "R" and path[-2] == "L":
-            return False
-        elif path[-1] == "L" and path[-2] == "R":
-            return False
-        elif path[-1] == "U" and path[-2] == "D":
-            return False
-        elif path[-1] == "D" and path[-2] == "U":
-            return False
+        for i, direction in enumerate(self.current_path):
+            if direction == "R":
+                current_x += 1
+            elif direction == "L":
+                current_x -= 1
+            elif direction == "U":
+                current_y -= 1
+            elif direction == "D":
+                current_y += 1
+            else:
+                raise ValueError(f"Direction: {direction} maze[{i}] is not a valid direction!")
 
-    for x in range(len(maze[0])):
-        if maze[0][x] == "s":
-            start_x = x
-            break
+        return self.maze[current_y][current_x] == "f"
 
-    current_x = start_x
-    current_y = 0
+    def print_maze(self):
+        maze_copy = copy.deepcopy(self.maze)
 
-    for i, direction in enumerate(path):
-        if direction == "R":
-            current_x += 1
-        elif direction == "L":
-            current_x -= 1
-        elif direction == "U":
-            current_y -= 1
-        elif direction == "D":
-            current_y += 1
+        for x in range(len(maze_copy[0])):
+            if maze_copy[0][x] == "s":
+                start_x = x
+                break
+
+        current_x = start_x
+        current_y = 0
+
+        for i, direction in enumerate(self.current_path):
+            if direction == "R":
+                current_x += 1
+            elif direction == "L":
+                current_x -= 1
+            elif direction == "U":
+                current_y -= 1
+            elif direction == "D":
+                current_y += 1
+            else:
+                raise ValueError(f"Direction: {direction} path[{i}] is not a valid direction!")
+
+            maze_copy[current_y][current_x] = "+"
+
+        self.clear_screen()
+        print(*(' '.join(row) for row in maze_copy), sep='\n')
+        return maze_copy
+
+    def show_maze(self, maze):
+        board.clear()
+        for row in range(len(maze)):
+            for col in range(len(maze[0])):
+                if maze[row][col] == "#":
+                    board[row][col] = "wall"
+                elif maze[row][col] == "+":
+                    board[row][col] = "plus"
+                elif maze[row][col] == "s":
+                    board[row][col] = "start"
+                elif maze[row][col] == "f":
+                    board[row][col] = "finish"
+                else:
+                    pass
+
+    def main(self):
+        if not self.maze_ended():
+            maze_to_show = self.print_maze()
+            self.show_maze(maze_to_show)
+            self.current_path = self.path.get()
+            for direction in self.directions:
+                new_path = self.current_path + direction
+                if self.valid(new_path):
+                    self.path.put(new_path)
         else:
-            raise ValueError(f"Direction: {direction} maze[{i}] is not a valid direction!")
-
-    if not (-1 < current_x < len(maze[0]) and -1 < current_y < len(maze)):
-        return False
-    elif maze[current_y][current_x] == "#":
-        return False
-    else:
-        return True
-
-
-def clear_screen():
-    os.system('cls' if os.name == 'nt' else 'clear')
-
-
-def print_maze(maze, path):
-    maze = copy.deepcopy(maze)
-
-    for x in range(len(maze[0])):
-        if maze[0][x] == "s":
-            start_x = x
-            break
-
-    current_x = start_x
-    current_y = 0
-
-    for i, direction in enumerate(path):
-        if direction == "R":
-            current_x += 1
-        elif direction == "L":
-            current_x -= 1
-        elif direction == "U":
-            current_y -= 1
-        elif direction == "D":
-            current_y += 1
-        else:
-            raise ValueError(f"Direction: {direction} maze[{i}] is not a valid direction!")
-
-        maze[current_y][current_x] = "+"
-
-    clear_screen()
-    print(*(' '.join(row) for row in maze), sep='\n')
-
-
-def main():
-    path = queue.Queue()
-    path.put("")
-    current_path = ""
-    maze = create_maze()
-    directions = ["R", "L", "U", "D"]
-
-    while not maze_ended(maze, current_path):
-        print_maze(maze, current_path)
-        time.sleep(0.5)
-        current_path = path.get()
-        for direction in directions:
-            new_path = current_path + direction
-            if valid(maze, new_path):
-                path.put(new_path)
-
-    print_maze(maze, current_path)
-    print(f"Shortest path: {current_path}")
+            maze_to_show = self.print_maze()
+            self.show_maze(maze_to_show)
+            print(f"Shortest path: {self.current_path}")
 
 
 if __name__ == '__main__':
-    main()
+    algorithm = Algorithm()
+    board = Board(len(algorithm.maze), len(algorithm.maze[0]))
+    board.title = "Breadth First Search Algorithm Simulator"
+    board.cell_size = 150
+    board.on_timer = algorithm.main
+    board.start_timer(500)
+    board.show()
