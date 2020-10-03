@@ -124,7 +124,7 @@ class Algorithm(object):
                 if maze[row][col] == "#":
                     board[row][col] = "wall"
                 elif maze[row][col] == "+":
-                    board[row][col] = "plus"
+                    board[row][col] = "dot"
                 elif maze[row][col] == "s":
                     board[row][col] = "start"
                 elif maze[row][col] == "f":
