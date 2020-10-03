@@ -1,48 +1,6 @@
 import os
 import copy
 import queue
-
-
-def create_maze():
-    maze = [["#", "#", "s", "#", "#"],
-            [" ", " ", " ", "#", "#"],
-            [" ", "#", " ", " ", "#"],
-            [" ", "#", "#", " ", "#"],
-            [" ", " ", " ", "f", "#"]]
-    return maze
-
-
-def maze_ended(maze, path):
-    for x in range(len(maze[0])):
-        if maze[0][x] == "s":
-            start_x = x
-            break
-
-    current_x = start_x
-    current_y = 0
-
-    for i, direction in enumerate(path):
-        if direction == "R":
-            current_x += 1
-        elif direction == "L":
-            current_x -= 1
-        elif direction == "U":
-            current_y -= 1
-        elif direction == "D":
-            current_y += 1
-        else:
-            raise ValueError(f"Direction: {direction} maze[{i}] is not a valid direction!")
-
-    return maze[current_y][current_x] == "f"
-
-
-def valid(maze, path):
-    # Check that we are not making a reverse step
-    if len(path) > 1:
-        if path[-1] == "R" and path[-2] == "L":
-=======
-=======
->>>>>>> ad1f00a90a7ae82a5af321399d2a7e253ccf96bd
 from game2dboard import Board
 
 
