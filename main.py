@@ -3,6 +3,8 @@ import copy
 import time
 import queue
 import datetime
+from random import randrange, shuffle
+
 from game2dboard import Board
 
 
@@ -12,16 +14,35 @@ class Algorithm(object):
         self.path = queue.Queue()
         self.path.put("")
         self.current_path = ""
-        self.maze = self.create_maze()
+        self.maze = self.create_maze(width=20, height=10)
         self.directions = ["R", "L", "U", "D"]
 
     @staticmethod
-    def create_maze():
-        maze = [["#", "#", "s", "#", "#"],
-                [" ", " ", " ", "#", "#"],
-                [" ", "#", " ", " ", "#"],
-                [" ", "#", "#", " ", "#"],
-                [" ", " ", " ", "f", "#"]]
+    def create_maze(width, height):
+        visited = [[0] * width + [1] for _ in range(height)]
+        visited.append([1] * (width + 1))
+        horizontal = [['+--'] * width + ['-'] for _ in range(height + 1)]
+        vertical = [['|  '] * width + ['|'] for _ in range(height)]
+        vertical.append([])
+
+        def traverse(x, y):
+            visited[y][x] = 1
+            neighbours = [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
+            shuffle(neighbours)
+            for neighbour in neighbours:
+                if visited[neighbour[1]][neighbour[0]]:
+                    continue
+                elif neighbour[0] == x:
+                    horizontal[max(neighbour[1], y)][x] = '+  '
+                elif neighbour[1] == y:
+                    vertical[y][max(neighbour[0], x)] = '   '
+
+                traverse(neighbour[0], neighbour[1])
+
+        traverse(randrange(width), randrange(height))
+        maze = ""
+        for hor, ver in zip(horizontal, vertical):
+            maze += ''.join(hor + ['\n'] + ver + ['\n'])
         return maze
 
     @staticmethod
