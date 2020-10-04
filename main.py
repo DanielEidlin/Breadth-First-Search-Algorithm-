@@ -1,6 +1,8 @@
 import os
 import copy
+import time
 import queue
+import datetime
 from game2dboard import Board
 
 
@@ -118,7 +120,9 @@ class Algorithm(object):
         return maze_copy
 
     def show_maze(self, maze):
+        delta = datetime.timedelta(seconds=int(time.time() - start_time - 0.5))
         board.clear()
+        board.print(f"Time took: {str(delta)}:{delta.microseconds}\tPath: {self.current_path}")
         for row in range(len(maze)):
             for col in range(len(maze[0])):
                 if maze[row][col] == "#":
@@ -142,6 +146,7 @@ class Algorithm(object):
                 if self.valid(new_path):
                     self.path.put(new_path)
         else:
+            board.stop_timer()
             maze_to_show = self.print_maze()
             self.show_maze(maze_to_show)
             print(f"Shortest path: {self.current_path}")
@@ -153,5 +158,7 @@ if __name__ == '__main__':
     board.title = "Breadth First Search Algorithm Simulator"
     board.cell_size = 150
     board.on_timer = algorithm.main
+    board.create_output(background_color="wheat4", color="white")
     board.start_timer(500)
+    start_time = time.time()
     board.show()
