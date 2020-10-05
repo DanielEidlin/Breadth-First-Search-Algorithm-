@@ -1,20 +1,26 @@
 import os
 import copy
+import sys
 import time
 import queue
+import pygame
 import datetime
+from pygame.locals import *
 from random import randrange, shuffle
 
-from game2dboard import Board
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
 
 
 class Algorithm(object):
 
-    def __init__(self):
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
         self.path = queue.Queue()
         self.path.put("")
         self.current_path = ""
-        self.maze = self.create_maze(width=16, height=9)
+        self.maze = self.create_maze(self.width, self.height)
         self.directions = ["R", "L", "U", "D"]
 
     @staticmethod
@@ -27,7 +33,7 @@ class Algorithm(object):
 
         def traverse(x, y):
             visited[y][x] = 1
-            neighbours = [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
+            neighbours = [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
             shuffle(neighbours)
             for neighbour in neighbours:
                 if visited[neighbour[1]][neighbour[0]]:
@@ -141,41 +147,9 @@ class Algorithm(object):
         print(*(''.join(row) for row in maze_copy), sep='\n')
         return maze_copy
 
-    def show_maze(self, maze):
-        delta = datetime.timedelta(seconds=int(time.time() - start_time - 0.5))
-        board.clear()
-        board.print(f"Time took: {str(delta)}:{delta.microseconds}\tPath: {self.current_path}")
-        for row in range(len(maze)):
-            for col in range(len(maze[0])):
-                if maze[row][col] == "#":
-                    board[row][col] = "wall"
-                elif maze[row][col] == "+":
-                    board[row][col] = "dot"
-                elif maze[row][col] == "s":
-                    board[row][col] = "start"
-                elif maze[row][col] == "f":
-                    board[row][col] = "finish"
-                else:
-                    pass
-
-    def main(self):
-        if not self.maze_ended():
-            maze_to_show = self.print_maze()
-            self.show_maze(maze_to_show)    # TODO: Update this!
-            self.current_path = self.path.get()
-            for direction in self.directions:
-                new_path = self.current_path + direction
-                if self.valid(new_path):
-                    self.path.put(new_path)
-        else:
-            board.stop_timer()
-            maze_to_show = self.print_maze()
-            self.show_maze(maze_to_show)
-            print(f"Shortest path: {self.current_path}")
-
     def main2(self):
         while not self.maze_ended():
-            maze_to_show = self.print_maze()
+            self.print_maze()
             time.sleep(0.2)
             self.current_path = self.path.get()
             for direction in self.directions:
@@ -183,18 +157,49 @@ class Algorithm(object):
                 if self.valid(new_path):
                     self.path.put(new_path)
 
-        maze_to_show = self.print_maze()
+        self.print_maze()
         print(f"Shortest path: {self.current_path}")
+
+    def draw_maze(self, width, height):
+        """
+        Draws the maze.
+        :param width: window width.
+        :param height: window height.
+        :return:
+        """
+        x = 20
+        y = 20
+        line_width = min((height-40) / (len(self.maze)/2 - 1), (width-40) / (len(self.maze[0])-1))
+        for i, row in enumerate(self.maze):
+            for col in row:
+                if col == '+---':
+                    pygame.draw.line(board, WHITE, (x, y), (x + line_width, y))
+                elif col[0] == '|':
+                    pygame.draw.line(board, WHITE, (x, y), (x, y - line_width))
+                else:
+                    pass
+                x += line_width
+            x = 20
+            if i % 2 == 0:
+                y += line_width
 
 
 if __name__ == '__main__':
-    algorithm = Algorithm()
-    algorithm.main2()
-    # board = Board(len(algorithm.maze), len(algorithm.maze[0]))
-    # board.title = "Breadth First Search Algorithm Simulator"
-    # board.cell_size = 150
-    # board.on_timer = algorithm.main
-    # board.create_output(background_color="wheat4", color="white")
-    # board.start_timer(500)
-    # start_time = time.time()
-    # board.show()
+    algorithm = Algorithm(width=40, height=20)
+    # algorithm.main2()
+    pygame.init()
+    info_object = pygame.display.Info()
+    board = pygame.display.set_mode((info_object.current_w - 100, info_object.current_h - 100))
+    board.fill(BLACK)
+    pygame.display.set_caption("Maze Generator and Solver Simulation")
+    clock = pygame.time.Clock()
+    algorithm.draw_maze(board.get_width(), board.get_height())
+    # pygame main loop
+    while True:
+        # code...
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+        clock.tick(30)
