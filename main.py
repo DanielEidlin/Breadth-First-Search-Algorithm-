@@ -3,13 +3,9 @@ import copy
 import sys
 import time
 import queue
-import pygame
 import datetime
-from pygame.locals import *
+from tkinter import *
 from random import randrange, shuffle
-
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
 
 
 class Algorithm(object):
@@ -160,46 +156,51 @@ class Algorithm(object):
         self.print_maze()
         print(f"Shortest path: {self.current_path}")
 
-    def draw_maze(self, width, height):
+    def draw_maze(self, root, canvas):
         """
         Draws the maze.
-        :param width: window width.
-        :param height: window height.
+        :param root: tkinter root
+        :param canvas: tkinter canvas
         :return:
         """
         x = 20
         y = 20
-        line_width = min((height-40) / (len(self.maze)/2 - 1), (width-40) / (len(self.maze[0])-1))
+        width = canvas.winfo_width()
+        height = canvas.winfo_height()
+        line_width = min((height - 40) / (len(self.maze) / 2 - 1), (width - 40) / (len(self.maze[0]) - 1))
         for i, row in enumerate(self.maze):
             for col in row:
                 if col == '+---':
-                    pygame.draw.line(board, WHITE, (x, y), (x + line_width, y))
+                    canvas.create_line(x, y, x + line_width, y, fill="white")
                 elif col[0] == '|':
-                    pygame.draw.line(board, WHITE, (x, y), (x, y - line_width))
+                    canvas.create_line(x, y, x, y - line_width, fill="white")
                 else:
                     pass
+                canvas.pack()
+                root.update()
                 x += line_width
+
             x = 20
             if i % 2 == 0:
                 y += line_width
 
 
+def on_close():
+    root.destroy()
+    global running
+    running = False
+
+
 if __name__ == '__main__':
     algorithm = Algorithm(width=40, height=20)
     # algorithm.main2()
-    pygame.init()
-    info_object = pygame.display.Info()
-    board = pygame.display.set_mode((info_object.current_w - 100, info_object.current_h - 100))
-    board.fill(BLACK)
-    pygame.display.set_caption("Maze Generator and Solver Simulation")
-    clock = pygame.time.Clock()
-    algorithm.draw_maze(board.get_width(), board.get_height())
-    # pygame main loop
-    while True:
-        # code...
-        pygame.display.update()
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                pygame.quit()
-                sys.exit()
-        clock.tick(30)
+    root = Tk()
+    root.title("Maze Generator and Solver Simulation")
+    root.protocol("WM_DELETE_WINDOW", on_close)
+    canvas = Canvas(root, bg="black", width=1600, height=900)
+    canvas.pack()
+    root.update()
+    algorithm.draw_maze(root, canvas)
+    running = True
+    while running:
+        root.update()
