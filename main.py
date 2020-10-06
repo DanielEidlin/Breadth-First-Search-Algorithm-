@@ -22,6 +22,7 @@ class MazeAlgorithm(object):
         self.root.title("Maze Generator and Solver Simulation")
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         self.canvas = Canvas(self.root, bg="black", width=1600, height=900)
+        self.ovals = []
         self.running = True
         self.canvas.pack()
         self.root.update()
@@ -154,9 +155,49 @@ class MazeAlgorithm(object):
         print(*(''.join(row) for row in maze_copy), sep='\n')
         return maze_copy
 
+    def draw_maze(self, maze_to_draw=None):
+        """
+        Draws the maze.
+        :param maze_to_draw: A specific maze to draw.
+        :return:
+        """
+        # clear ovals
+        while self.ovals:
+            oval = self.ovals.pop()
+            self.canvas.delete(oval)
+        x = 20
+        y = 20
+        width = self.canvas.winfo_width()
+        height = self.canvas.winfo_height()
+        maze = maze_to_draw if maze_to_draw else self.maze
+        line_width = min((height - 40) / (len(self.maze) / 2 - 1), (width - 40) / (len(self.maze[0]) - 1))
+
+        for i, row in enumerate(maze):
+            for col in row:
+                if col == '+---':
+                    self.canvas.create_line(x, y, x + line_width, y, fill="white")
+                elif col[0] == '|':
+                    self.canvas.create_line(x, y, x, y - line_width, fill="white")
+                if len(col) > 2 and col[2] == '*':
+                    oval = self.canvas.create_oval(x + line_width * 0.25, y - line_width * 0.75, x + line_width * 0.75,
+                                                   y - line_width * 0.25, fill="green")
+                    self.ovals.append(oval)
+                else:
+                    pass
+
+                x += line_width
+
+            x = 20
+            if i % 2 == 0:
+                y += line_width
+
+        self.canvas.pack()
+        self.root.update()
+
     def main(self):
         while not self.maze_ended():
-            self.print_maze()
+            current_maze = self.print_maze()
+            self.draw_maze(maze_to_draw=current_maze)
             time.sleep(0.2)
             self.current_path = self.path.get()
             for direction in self.directions:
@@ -164,37 +205,12 @@ class MazeAlgorithm(object):
                 if self.valid(new_path):
                     self.path.put(new_path)
 
-        self.print_maze()
+        current_maze = self.print_maze()
+        self.draw_maze(maze_to_draw=current_maze)
         print(f"Shortest path: {self.current_path}")
 
         while self.running:
             self.root.update()
-
-    def draw_maze(self):
-        """
-        Draws the maze.
-        :return:
-        """
-        x = 20
-        y = 20
-        width = self.canvas.winfo_width()
-        height = self.canvas.winfo_height()
-        line_width = min((height - 40) / (len(self.maze) / 2 - 1), (width - 40) / (len(self.maze[0]) - 1))
-        for i, row in enumerate(self.maze):
-            for col in row:
-                if col == '+---':
-                    self.canvas.create_line(x, y, x + line_width, y, fill="white")
-                elif col[0] == '|':
-                    self.canvas.create_line(x, y, x, y - line_width, fill="white")
-                else:
-                    pass
-                self.canvas.pack()
-                self.root.update()
-                x += line_width
-
-            x = 20
-            if i % 2 == 0:
-                y += line_width
 
 
 if __name__ == '__main__':
