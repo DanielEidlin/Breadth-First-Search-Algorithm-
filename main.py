@@ -8,16 +8,27 @@ from tkinter import *
 from random import randrange, shuffle
 
 
-class Algorithm(object):
+class MazeAlgorithm(object):
 
-    def __init__(self, width, height):
-        self.width = width
-        self.height = height
+    def __init__(self, maze_width, maze_height):
+        self.maze_width = maze_width
+        self.maze_height = maze_height
         self.path = queue.Queue()
         self.path.put("")
         self.current_path = ""
-        self.maze = self.create_maze(self.width, self.height)
+        self.maze = self.create_maze(self.maze_width, self.maze_height)
         self.directions = ["R", "L", "U", "D"]
+        self.root = Tk()
+        self.root.title("Maze Generator and Solver Simulation")
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
+        self.canvas = Canvas(self.root, bg="black", width=1600, height=900)
+        self.running = True
+        self.canvas.pack()
+        self.root.update()
+
+    def on_close(self):
+        self.root.destroy()
+        self.running = False
 
     @staticmethod
     def create_maze(width, height):
@@ -143,7 +154,7 @@ class Algorithm(object):
         print(*(''.join(row) for row in maze_copy), sep='\n')
         return maze_copy
 
-    def main2(self):
+    def main(self):
         while not self.maze_ended():
             self.print_maze()
             time.sleep(0.2)
@@ -156,28 +167,29 @@ class Algorithm(object):
         self.print_maze()
         print(f"Shortest path: {self.current_path}")
 
-    def draw_maze(self, root, canvas):
+        while self.running:
+            self.root.update()
+
+    def draw_maze(self):
         """
         Draws the maze.
-        :param root: tkinter root
-        :param canvas: tkinter canvas
         :return:
         """
         x = 20
         y = 20
-        width = canvas.winfo_width()
-        height = canvas.winfo_height()
+        width = self.canvas.winfo_width()
+        height = self.canvas.winfo_height()
         line_width = min((height - 40) / (len(self.maze) / 2 - 1), (width - 40) / (len(self.maze[0]) - 1))
         for i, row in enumerate(self.maze):
             for col in row:
                 if col == '+---':
-                    canvas.create_line(x, y, x + line_width, y, fill="white")
+                    self.canvas.create_line(x, y, x + line_width, y, fill="white")
                 elif col[0] == '|':
-                    canvas.create_line(x, y, x, y - line_width, fill="white")
+                    self.canvas.create_line(x, y, x, y - line_width, fill="white")
                 else:
                     pass
-                canvas.pack()
-                root.update()
+                self.canvas.pack()
+                self.root.update()
                 x += line_width
 
             x = 20
@@ -185,22 +197,7 @@ class Algorithm(object):
                 y += line_width
 
 
-def on_close():
-    root.destroy()
-    global running
-    running = False
-
-
 if __name__ == '__main__':
-    algorithm = Algorithm(width=40, height=20)
-    # algorithm.main2()
-    root = Tk()
-    root.title("Maze Generator and Solver Simulation")
-    root.protocol("WM_DELETE_WINDOW", on_close)
-    canvas = Canvas(root, bg="black", width=1600, height=900)
-    canvas.pack()
-    root.update()
-    algorithm.draw_maze(root, canvas)
-    running = True
-    while running:
-        root.update()
+    algorithm = MazeAlgorithm(maze_width=10, maze_height=5)
+    algorithm.draw_maze()
+    algorithm.main()
