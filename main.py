@@ -228,7 +228,6 @@ class MazeAlgorithm(object):
         while not self.maze_ended():
             current_maze = self.print_maze()
             self.draw_path(maze=current_maze)
-            time.sleep(0.2)
             self.current_path = self.path.get()
             for direction in self.directions:
                 new_path = self.current_path + direction
