@@ -5,6 +5,7 @@ import time
 import queue
 import datetime
 from tkinter import *
+from PIL import Image, ImageTk
 from random import randrange, shuffle
 
 
@@ -22,10 +23,18 @@ class MazeAlgorithm(object):
         self.root.title("Maze Generator and Solver Simulation")
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         self.canvas = Canvas(self.root, bg="black", width=1600, height=900)
-        self.ovals = []
-        self.running = True
         self.canvas.pack()
         self.root.update()
+        self.line_length = min((self.canvas.winfo_height() - 40) / (len(self.maze) / 2 - 1),
+                               (self.canvas.winfo_width() - 40) / (len(self.maze[0]) - 1))
+        self.pluses = []
+        self.running = True
+        self.start_image = ImageTk.PhotoImage(
+            Image.open('images/start.png').resize((int(self.line_length * 0.5), int(self.line_length * 0.5))))
+        self.finish_image = ImageTk.PhotoImage(
+            Image.open('images/finish.png').resize((int(self.line_length * 0.5), int(self.line_length * 0.5))))
+        self.plus_image = ImageTk.PhotoImage(
+            Image.open('images/plus.png').resize((int(self.line_length * 0.5), int(self.line_length * 0.5))))
 
     def on_close(self):
         self.root.destroy()
@@ -151,6 +160,8 @@ class MazeAlgorithm(object):
             cell_string_as_list[2] = '*'
             maze_copy[current_y][current_x] = ''.join(cell_string_as_list)
 
+        maze_copy[-3][-2] = '  F '
+
         self.clear_screen()
         print(*(''.join(row) for row in maze_copy), sep='\n')
         return maze_copy
@@ -161,35 +172,54 @@ class MazeAlgorithm(object):
         :param maze_to_draw: A specific maze to draw.
         :return:
         """
-        # clear ovals
-        while self.ovals:
-            oval = self.ovals.pop()
-            self.canvas.delete(oval)
         x = 20
         y = 20
-        width = self.canvas.winfo_width()
-        height = self.canvas.winfo_height()
         maze = maze_to_draw if maze_to_draw else self.maze
-        line_width = min((height - 40) / (len(self.maze) / 2 - 1), (width - 40) / (len(self.maze[0]) - 1))
 
         for i, row in enumerate(maze):
             for col in row:
                 if col == '+---':
-                    self.canvas.create_line(x, y, x + line_width, y, fill="white")
+                    self.canvas.create_line(x, y, x + self.line_length, y, fill="white")
                 elif col[0] == '|':
-                    self.canvas.create_line(x, y, x, y - line_width, fill="white")
-                if len(col) > 2 and col[2] == '*':
-                    oval = self.canvas.create_oval(x + line_width * 0.25, y - line_width * 0.75, x + line_width * 0.75,
-                                                   y - line_width * 0.25, fill="green")
-                    self.ovals.append(oval)
-                else:
-                    pass
+                    self.canvas.create_line(x, y, x, y - self.line_length, fill="white")
 
-                x += line_width
+                x += self.line_length
+                self.canvas.pack()
+                self.root.update()
 
             x = 20
             if i % 2 == 0:
-                y += line_width
+                y += self.line_length
+
+    def draw_path(self, maze):
+        x = 20
+        y = 20
+
+        # clear ovals
+        while self.pluses:
+            plus = self.pluses.pop()
+            self.canvas.delete(plus)
+
+        for i, row in enumerate(maze):
+            for col in row:
+                if len(col) > 2 and col[2] == '*':
+                    plus = self.canvas.create_image(x + 0.5 * self.line_length, y - 0.5 * self.line_length,
+                                                    image=self.plus_image)
+                    self.pluses.append(plus)
+
+                elif len(col) > 2 and col[2] == 'S':
+                    self.canvas.create_image(x + 0.5 * self.line_length, y - 0.5 * self.line_length,
+                                             image=self.start_image)
+
+                elif len(col) > 2 and col[2] == 'F':
+                    self.canvas.create_image(x + 0.5 * self.line_length, y - 0.5 * self.line_length,
+                                             image=self.finish_image)
+
+                x += self.line_length
+
+            x = 20
+            if i % 2 == 0:
+                y += self.line_length
 
         self.canvas.pack()
         self.root.update()
@@ -197,7 +227,7 @@ class MazeAlgorithm(object):
     def main(self):
         while not self.maze_ended():
             current_maze = self.print_maze()
-            self.draw_maze(maze_to_draw=current_maze)
+            self.draw_path(maze=current_maze)
             time.sleep(0.2)
             self.current_path = self.path.get()
             for direction in self.directions:
@@ -206,7 +236,7 @@ class MazeAlgorithm(object):
                     self.path.put(new_path)
 
         current_maze = self.print_maze()
-        self.draw_maze(maze_to_draw=current_maze)
+        self.draw_path(maze=current_maze)
         print(f"Shortest path: {self.current_path}")
 
         while self.running:
