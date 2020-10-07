@@ -139,3 +139,4 @@ cython_debug/
 
 # More stuff
 .idea/
+.DS_Store
