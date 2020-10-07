@@ -63,7 +63,7 @@ class MazeAlgorithm(object):
         :param path: The path to the image.
         :return: A tkinter image.
         """
-        image = ImageTk.PhotoImage(Image.open(path).resize((int(self.line_length * 0.5), int(self.line_length * 0.5))))
+        image = ImageTk.PhotoImage(Image.open(path).resize((int(self.line_length * 0.75), int(self.line_length * 0.75))))
         return image
 
     def on_close(self):
@@ -382,6 +382,6 @@ class MazeAlgorithm(object):
 
 
 if __name__ == '__main__':
-    algorithm = MazeAlgorithm(maze_width=20, maze_height=10)
+    algorithm = MazeAlgorithm(maze_width=10, maze_height=5)
     algorithm.draw_maze()
     algorithm.main()
