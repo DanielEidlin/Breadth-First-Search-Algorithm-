@@ -25,9 +25,12 @@ class MazeAlgorithm(object):
         self.canvas = Canvas(self.root, bg="black", width=1600, height=900)
         self.canvas.pack()
         self.root.update()
+        self.text = self.canvas.create_text((self.canvas.winfo_width() - 40) / 2, self.canvas.winfo_height() - 40,
+                                            fill="white", text="")
         self.line_length = min((self.canvas.winfo_height() - 40) / (len(self.maze) / 2 - 1),
                                (self.canvas.winfo_width() - 40) / (len(self.maze[0]) - 1))
-        self.pluses = []
+        self.total_time = 0
+        self.graphics = []
         self.running = True
         self.start_image = ImageTk.PhotoImage(
             Image.open('images/start.png').resize((int(self.line_length * 0.5), int(self.line_length * 0.5))))
@@ -196,16 +199,16 @@ class MazeAlgorithm(object):
         y = 20
 
         # clear ovals
-        while self.pluses:
-            plus = self.pluses.pop()
-            self.canvas.delete(plus)
+        while self.graphics:
+            component = self.graphics.pop()
+            self.canvas.delete(component)
 
         for i, row in enumerate(maze):
             for col in row:
                 if len(col) > 2 and col[2] == '*':
                     plus = self.canvas.create_image(x + 0.5 * self.line_length, y - 0.5 * self.line_length,
                                                     image=self.plus_image)
-                    self.pluses.append(plus)
+                    self.graphics.append(plus)
 
                 elif len(col) > 2 and col[2] == 'S':
                     self.canvas.create_image(x + 0.5 * self.line_length, y - 0.5 * self.line_length,
@@ -224,15 +227,27 @@ class MazeAlgorithm(object):
         self.canvas.pack()
         self.root.update()
 
+    def show_time(self, delta_time):
+        self.total_time += delta_time
+        self.canvas.itemconfigure(self.text, text=f"Time took: {self.total_time} secs\tPath: {self.current_path}")
+        self.canvas.pack()
+        self.root.update()
+
     def main(self):
+        start_time = time.time()
         while not self.maze_ended():
             current_maze = self.print_maze()
             self.draw_path(maze=current_maze)
+            gui_time = time.time()
             self.current_path = self.path.get()
             for direction in self.directions:
                 new_path = self.current_path + direction
                 if self.valid(new_path):
                     self.path.put(new_path)
+
+            algorithm_time = time.time()
+            self.show_time(algorithm_time - start_time - (algorithm_time - gui_time))
+            start_time = time.time()
 
         current_maze = self.print_maze()
         self.draw_path(maze=current_maze)
@@ -246,3 +261,6 @@ if __name__ == '__main__':
     algorithm = MazeAlgorithm(maze_width=10, maze_height=5)
     algorithm.draw_maze()
     algorithm.main()
+    # TODO: Add time took and steps to GUI
+    # TODO: Replace plus with arrows
+    # TODO: Make a silly version of the GUI
