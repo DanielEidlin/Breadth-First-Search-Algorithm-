@@ -3,6 +3,7 @@ import copy
 import time
 import queue
 from tkinter import *
+from typing import List
 from PIL import Image, ImageTk
 from random import randrange, shuffle
 
@@ -17,12 +18,8 @@ class MazeAlgorithm(object):
         self.current_path = ""
         self.maze = self.create_maze(self.maze_width, self.maze_height)
         self.directions = ["R", "L", "U", "D"]
-        self.root = Tk()
-        self.root.title("Maze Generator and Solver Simulation")
-        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
-        self.canvas = Canvas(self.root, bg="black", width=1600, height=900)
-        self.canvas.pack()
-        self.root.update()
+        self.root = self.create_root()
+        self.canvas = self.create_canvas()
         self.text = self.canvas.create_text((self.canvas.winfo_width() - 40) / 2, self.canvas.winfo_height() - 40,
                                             fill="white", text="")
         self.line_length = min((self.canvas.winfo_height() - 40) / (len(self.maze) / 2 - 1),
@@ -30,32 +27,69 @@ class MazeAlgorithm(object):
         self.total_time = 0
         self.graphics = []
         self.running = True
-        self.start_image = ImageTk.PhotoImage(
-            Image.open('images/start.png').resize((int(self.line_length * 0.5), int(self.line_length * 0.5))))
-        self.finish_image = ImageTk.PhotoImage(
-            Image.open('images/finish.png').resize((int(self.line_length * 0.5), int(self.line_length * 0.5))))
-        self.right_image = ImageTk.PhotoImage(
-            Image.open('images/right.png').resize((int(self.line_length * 0.25), int(self.line_length * 0.25))))
-        self.left_image = ImageTk.PhotoImage(
-            Image.open('images/left.png').resize((int(self.line_length * 0.25), int(self.line_length * 0.25))))
-        self.up_image = ImageTk.PhotoImage(
-            Image.open('images/up.png').resize((int(self.line_length * 0.25), int(self.line_length * 0.25))))
-        self.down_image = ImageTk.PhotoImage(
-            Image.open('images/down.png').resize((int(self.line_length * 0.25), int(self.line_length * 0.25))))
+        self.start_image = self.generate_image("images/start.png")
+        self.finish_image = self.generate_image('images/finish.png')
+        self.right_image = self.generate_image('images/right.png')
+        self.left_image = self.generate_image('images/left.png')
+        self.up_image = self.generate_image('images/up.png')
+        self.down_image = self.generate_image('images/down.png')
+
+    def create_root(self) -> Tk:
+        """
+        Creates the root tkinter window.
+        :return: Tk object.
+        """
+        root = Tk()
+        root.title("Maze Generator and Solver Simulation")
+        root.protocol("WM_DELETE_WINDOW", self.on_close)
+        root.update()
+        return root
+
+    def create_canvas(self) -> Canvas:
+        """
+        Create tkinter canvas.
+        :return:
+        """
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        canvas = Canvas(self.root, bg="black", width=screen_width * 0.9, height=screen_height * 0.9)
+        canvas.pack()
+        self.root.update()
+        return canvas
+
+    def generate_image(self, path: str) -> ImageTk.PhotoImage:
+        """
+        Generate a tkinter image and resize it appropriately.
+        :param path: The path to the image.
+        :return: A tkinter image.
+        """
+        image = ImageTk.PhotoImage(Image.open(path).resize((int(self.line_length * 0.5), int(self.line_length * 0.5))))
+        return image
 
     def on_close(self):
+        """
+        Destroys the window and end the mainloop.
+        :return:
+        """
         self.root.destroy()
         self.running = False
 
     @staticmethod
-    def create_maze(width, height):
+    def generate_maze(width: int, height: int) -> (List[List[str]], List[List[str]]):
+        """
+        Generates a random maze using the Randomized depth-first search algorithm.
+        https://en.wikipedia.org/wiki/Maze_generation_algorithm
+        :param width: Maze width.
+        :param height: Maze height.
+        :return: 2 separate 2d lists representing the horizontal and vertical parts of the maze's body.
+        """
         visited = [[0] * width + [1] for _ in range(height)]
         visited.append([1] * (width + 1))
         horizontal = [['+---'] * width + ['+'] for _ in range(height + 1)]
         vertical = [['|   '] * width + ['|'] for _ in range(height)]
         vertical.append([])
 
-        def traverse(x, y):
+        def traverse(x: int, y: int) -> NONE:
             visited[y][x] = 1
             neighbours = [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
             shuffle(neighbours)
@@ -70,7 +104,17 @@ class MazeAlgorithm(object):
                 traverse(neighbour[0], neighbour[1])
 
         traverse(randrange(width), randrange(height))
+        return horizontal, vertical
 
+    @staticmethod
+    def create_maze(width: int, height: int) -> List[List[str]]:
+        """
+        Create a 2d list where each element represents a part of the maze.
+        :param width: Maze width.
+        :param height: Maze height.
+        :return: A 2d list of strings.
+        """
+        horizontal, vertical = MazeAlgorithm.generate_maze(width, height)
         maze = []
         for i in range(len(horizontal)):
             maze.append(horizontal[i])
@@ -86,21 +130,40 @@ class MazeAlgorithm(object):
         return maze
 
     @staticmethod
-    def clear_screen():
+    def clear_screen() -> NONE:
+        """
+        Clear the console screen.
+        :return:
+        """
         os.system('cls' if os.name == 'nt' else 'clear')
 
-    def valid(self, path):
+    @staticmethod
+    def reverse_step(path: List[str]) -> bool:
+        """
+        Check that the path isn't taking a step back.
+        :param path: The set of moves to follow e.g Right, Right, Down, Up...
+        :return: A boolean representing whether or not a step back was taken.
+        """
         # Check that we are not making a reverse step
         if len(path) > 1:
             if path[-1] == "R" and path[-2] == "L":
-                return False
+                return True
             elif path[-1] == "L" and path[-2] == "R":
-                return False
+                return True
             elif path[-1] == "U" and path[-2] == "D":
-                return False
+                return True
             elif path[-1] == "D" and path[-2] == "U":
-                return False
+                return True
 
+        return False
+
+    @staticmethod
+    def walk_path(path: List[str]) -> (int, int):
+        """
+        Walk through the given path.
+        :param path: The set of moves to follow e.g Right, Right, Down, Up...
+        :return: x, y end coordinates.
+        """
         current_x = 0
         current_y = 1
         for i, direction in enumerate(path):
@@ -114,76 +177,84 @@ class MazeAlgorithm(object):
                 current_y += 2
             else:
                 raise ValueError(f"Direction: {direction} maze[{i}] is not a valid direction!")
+        return current_x, current_y
 
-        if not (-1 < current_x < len(self.maze[0]) - 1 and -1 < current_y < len(self.maze) - 1):
-            return False
-        elif path[-1] == "R" and self.maze[current_y][current_x][0] == "|":
-            return False
-        elif path[-1] == "L" and self.maze[current_y][current_x + 1][0] == "|":
-            return False
-        elif path[-1] == "U" and self.maze[current_y + 1][current_x][1] == "-":
-            return False
-        elif path[-1] == "D" and self.maze[current_y - 1][current_x][1] == "-":
-            return False
-        else:
+    def collided(self, path: List[str], x: int, y: int) -> bool:
+        """
+        Check that that current coordinates don't collide with a wall or exit the bounds.
+        :param path: The set of moves to follow e.g Right, Right, Down, Up...
+        :param x: x coordinate.
+        :param y: y coordinate.
+        :return: A boolean representing whether or not a collision occurred.
+        """
+        if not (-1 < x < len(self.maze[0]) - 1 and -1 < y < len(self.maze) - 1):
             return True
+        elif path[-1] == "R" and self.maze[y][x][0] == "|":
+            return True
+        elif path[-1] == "L" and self.maze[y][x + 1][0] == "|":
+            return True
+        elif path[-1] == "U" and self.maze[y + 1][x][1] == "-":
+            return True
+        elif path[-1] == "D" and self.maze[y - 1][x][1] == "-":
+            return True
+        else:
+            return False
 
-    def maze_ended(self):
-        current_x = 0
-        current_y = 1
+    def valid(self, path: List[str]) -> bool:
+        """
+        Check if the current path is valid e.g if it's not going through a wall.
+        :param path: The set of moves to follow e.g Right, Right, Down, Up...
+        :return: A boolean representing the validity of the move.
+        """
+        x, y = MazeAlgorithm.walk_path(path)
+        return not MazeAlgorithm.reverse_step(path) and not self.collided(path, x, y)
 
-        for i, direction in enumerate(self.current_path):
-            if direction == "R":
-                current_x += 1
-            elif direction == "L":
-                current_x -= 1
-            elif direction == "U":
-                current_y -= 2
-            elif direction == "D":
-                current_y += 2
-            else:
-                raise ValueError(f"Direction: {direction} maze[{i}] is not a valid direction!")
-
-        return current_x == len(self.maze[0]) - 2 and current_y == len(self.maze) - 3
+    def maze_ended(self) -> bool:
+        """
+        Check if the path has reached the end of the maze.
+        :return: A boolean representing representing whether or not the end has been reached.
+        """
+        x, y = MazeAlgorithm.walk_path(self.current_path)
+        return x == len(self.maze[0]) - 2 and y == len(self.maze) - 3
 
     @staticmethod
-    def insert_arrow(x, y, maze_copy, direction):
+    def insert_arrow(x: int, y: int, maze: List[List[str]], direction: str) -> NONE:
+        """
+        Inserts ascii arrow indication depending on the direction.
+        :param x: column index.
+        :param y: row index.
+        :param maze: A 2d list where each element represents a part of the maze.
+        :param direction: The direction of the arrow.
+        :return:
+        """
         if direction == "R":
-            cell_string_as_list = list(maze_copy[y][x])
+            cell_string_as_list = list(maze[y][x])
             cell_string_as_list[2] = '>'
-            maze_copy[y][x] = ''.join(cell_string_as_list)
+            maze[y][x] = ''.join(cell_string_as_list)
         elif direction == "L":
-            cell_string_as_list = list(maze_copy[y][x])
+            cell_string_as_list = list(maze[y][x])
             cell_string_as_list[2] = '<'
-            maze_copy[y][x] = ''.join(cell_string_as_list)
+            maze[y][x] = ''.join(cell_string_as_list)
         elif direction == "U":
-            cell_string_as_list = list(maze_copy[y][x])
+            cell_string_as_list = list(maze[y][x])
             cell_string_as_list[2] = '^'
-            maze_copy[y][x] = ''.join(cell_string_as_list)
+            maze[y][x] = ''.join(cell_string_as_list)
         elif direction == "D":
-            cell_string_as_list = list(maze_copy[y][x])
+            cell_string_as_list = list(maze[y][x])
             cell_string_as_list[2] = 'v'
-            maze_copy[y][x] = ''.join(cell_string_as_list)
+            maze[y][x] = ''.join(cell_string_as_list)
 
-    def print_maze(self):
+    def print_maze(self) -> List[List[str]]:
+        """
+        Insert characters at appropriate locations of the maze and return the new maze.
+        :return: A copy of the original maze but with mark characters.
+        """
         maze_copy = copy.deepcopy(self.maze)
-        current_x = 0
-        current_y = 1
 
         for i, direction in enumerate(self.current_path):
-            if direction == "R":
-                current_x += 1
-            elif direction == "L":
-                current_x -= 1
-            elif direction == "U":
-                current_y -= 2
-            elif direction == "D":
-                current_y += 2
-            else:
-                raise ValueError(f"Direction: {direction} path[{i}] is not a valid direction!")
-
+            x, y = MazeAlgorithm.walk_path(self.current_path[:i + 1])
             arrow_direction = self.current_path[i + 1] if i < len(self.current_path) - 1 else direction
-            self.insert_arrow(current_x, current_y, maze_copy, arrow_direction)
+            self.insert_arrow(x, y, maze_copy, arrow_direction)
 
         maze_copy[-3][-2] = '  F '
 
@@ -191,7 +262,7 @@ class MazeAlgorithm(object):
         print(*(''.join(row) for row in maze_copy), sep='\n')
         return maze_copy
 
-    def draw_maze(self, maze_to_draw=None):
+    def draw_maze(self, maze_to_draw: List[List[str]] = None) -> NONE:
         """
         Draws the maze.
         :param maze_to_draw: A specific maze to draw.
@@ -216,7 +287,12 @@ class MazeAlgorithm(object):
             if i % 2 == 0:
                 y += self.line_length
 
-    def draw_path(self, maze):
+    def draw_path(self, maze: List[List[str]]) -> NONE:
+        """
+        Draws the marks along the path to the screen.
+        :param maze: A 2d list where each element represents a part of the maze.
+        :return:
+        """
         x = 20
         y = 20
 
@@ -264,13 +340,24 @@ class MazeAlgorithm(object):
         self.canvas.pack()
         self.root.update()
 
-    def show_time(self, delta_time):
+    def show_time(self, delta_time: float) -> NONE:
+        """
+        Update the text log about the current time took and path.
+        :param delta_time: The time passed from previous iteration of the algorithm.
+        :return:
+        """
         self.total_time += delta_time
         self.canvas.itemconfigure(self.text, text=f"Time took: {self.total_time} secs\nPath: {self.current_path}")
         self.canvas.pack()
         self.root.update()
 
-    def main(self):
+    def main(self) -> NONE:
+        """
+        The main function which solves the maze using the "breadth first search" algorithm.
+        https://youtu.be/hettiSrJjM4
+        Prints each attempt to the console and draws it on the screen.
+        :return:
+        """
         start_time = time.time()
         while not self.maze_ended():
             current_maze = self.print_maze()
@@ -295,7 +382,6 @@ class MazeAlgorithm(object):
 
 
 if __name__ == '__main__':
-    algorithm = MazeAlgorithm(maze_width=40, maze_height=20)
+    algorithm = MazeAlgorithm(maze_width=20, maze_height=10)
     algorithm.draw_maze()
     algorithm.main()
-    # TODO: Make a silly version of the GUI
