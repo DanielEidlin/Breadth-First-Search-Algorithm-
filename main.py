@@ -1,9 +1,7 @@
 import os
 import copy
-import sys
 import time
 import queue
-import datetime
 from tkinter import *
 from PIL import Image, ImageTk
 from random import randrange, shuffle
@@ -36,8 +34,14 @@ class MazeAlgorithm(object):
             Image.open('images/start.png').resize((int(self.line_length * 0.5), int(self.line_length * 0.5))))
         self.finish_image = ImageTk.PhotoImage(
             Image.open('images/finish.png').resize((int(self.line_length * 0.5), int(self.line_length * 0.5))))
-        self.plus_image = ImageTk.PhotoImage(
-            Image.open('images/plus.png').resize((int(self.line_length * 0.5), int(self.line_length * 0.5))))
+        self.right_image = ImageTk.PhotoImage(
+            Image.open('images/right.png').resize((int(self.line_length * 0.25), int(self.line_length * 0.25))))
+        self.left_image = ImageTk.PhotoImage(
+            Image.open('images/left.png').resize((int(self.line_length * 0.25), int(self.line_length * 0.25))))
+        self.up_image = ImageTk.PhotoImage(
+            Image.open('images/up.png').resize((int(self.line_length * 0.25), int(self.line_length * 0.25))))
+        self.down_image = ImageTk.PhotoImage(
+            Image.open('images/down.png').resize((int(self.line_length * 0.25), int(self.line_length * 0.25))))
 
     def on_close(self):
         self.root.destroy()
@@ -142,6 +146,25 @@ class MazeAlgorithm(object):
 
         return current_x == len(self.maze[0]) - 2 and current_y == len(self.maze) - 3
 
+    @staticmethod
+    def insert_arrow(x, y, maze_copy, direction):
+        if direction == "R":
+            cell_string_as_list = list(maze_copy[y][x])
+            cell_string_as_list[2] = '>'
+            maze_copy[y][x] = ''.join(cell_string_as_list)
+        elif direction == "L":
+            cell_string_as_list = list(maze_copy[y][x])
+            cell_string_as_list[2] = '<'
+            maze_copy[y][x] = ''.join(cell_string_as_list)
+        elif direction == "U":
+            cell_string_as_list = list(maze_copy[y][x])
+            cell_string_as_list[2] = '^'
+            maze_copy[y][x] = ''.join(cell_string_as_list)
+        elif direction == "D":
+            cell_string_as_list = list(maze_copy[y][x])
+            cell_string_as_list[2] = 'v'
+            maze_copy[y][x] = ''.join(cell_string_as_list)
+
     def print_maze(self):
         maze_copy = copy.deepcopy(self.maze)
         current_x = 0
@@ -159,9 +182,8 @@ class MazeAlgorithm(object):
             else:
                 raise ValueError(f"Direction: {direction} path[{i}] is not a valid direction!")
 
-            cell_string_as_list = list(maze_copy[current_y][current_x])
-            cell_string_as_list[2] = '*'
-            maze_copy[current_y][current_x] = ''.join(cell_string_as_list)
+            arrow_direction = self.current_path[i + 1] if i < len(self.current_path) - 1 else direction
+            self.insert_arrow(current_x, current_y, maze_copy, arrow_direction)
 
         maze_copy[-3][-2] = '  F '
 
@@ -188,7 +210,7 @@ class MazeAlgorithm(object):
 
                 x += self.line_length
                 self.canvas.pack()
-                self.root.update()
+            self.root.update()
 
             x = 20
             if i % 2 == 0:
@@ -205,10 +227,25 @@ class MazeAlgorithm(object):
 
         for i, row in enumerate(maze):
             for col in row:
-                if len(col) > 2 and col[2] == '*':
-                    plus = self.canvas.create_image(x + 0.5 * self.line_length, y - 0.5 * self.line_length,
-                                                    image=self.plus_image)
-                    self.graphics.append(plus)
+                if len(col) > 2 and col[2] == '>':
+                    arrow = self.canvas.create_image(x + 0.5 * self.line_length, y - 0.5 * self.line_length,
+                                                     image=self.right_image)
+                    self.graphics.append(arrow)
+
+                elif len(col) > 2 and col[2] == '<':
+                    arrow = self.canvas.create_image(x + 0.5 * self.line_length, y - 0.5 * self.line_length,
+                                                     image=self.left_image)
+                    self.graphics.append(arrow)
+
+                elif len(col) > 2 and col[2] == '^':
+                    arrow = self.canvas.create_image(x + 0.5 * self.line_length, y - 0.5 * self.line_length,
+                                                     image=self.up_image)
+                    self.graphics.append(arrow)
+
+                elif len(col) > 2 and col[2] == 'v':
+                    arrow = self.canvas.create_image(x + 0.5 * self.line_length, y - 0.5 * self.line_length,
+                                                     image=self.down_image)
+                    self.graphics.append(arrow)
 
                 elif len(col) > 2 and col[2] == 'S':
                     self.canvas.create_image(x + 0.5 * self.line_length, y - 0.5 * self.line_length,
@@ -229,7 +266,7 @@ class MazeAlgorithm(object):
 
     def show_time(self, delta_time):
         self.total_time += delta_time
-        self.canvas.itemconfigure(self.text, text=f"Time took: {self.total_time} secs\tPath: {self.current_path}")
+        self.canvas.itemconfigure(self.text, text=f"Time took: {self.total_time} secs\nPath: {self.current_path}")
         self.canvas.pack()
         self.root.update()
 
@@ -258,9 +295,7 @@ class MazeAlgorithm(object):
 
 
 if __name__ == '__main__':
-    algorithm = MazeAlgorithm(maze_width=10, maze_height=5)
+    algorithm = MazeAlgorithm(maze_width=40, maze_height=20)
     algorithm.draw_maze()
     algorithm.main()
-    # TODO: Add time took and steps to GUI
-    # TODO: Replace plus with arrows
     # TODO: Make a silly version of the GUI
